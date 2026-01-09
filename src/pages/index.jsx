@@ -73,7 +73,6 @@ function Contactus() {
       <form
           method="POST"
           action="/api/contact-home"
-          enctype="application/x-www-form-urlencoded"
           className="rounded-2xl border border-zinc-100 p-6 dark:border-zinc-700/40"
       >
         <h3 className="flex text-sm font-semibold text-zinc-900 dark:text-zinc-100">
