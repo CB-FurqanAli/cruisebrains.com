@@ -44,7 +44,7 @@ export default async function handler(req, res) {
       `,
         })
 
-        return res.redirect('/thank-you')
+        return res.redirect(303, '/thank-you')
     } catch (error) {
         console.error(error)
         return res.status(500).send('Email not sent')
