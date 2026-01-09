@@ -11,20 +11,24 @@ export default async function handler(req, res) {
         return res.status(400).send('Missing fields')
     }
 
+    const EMAIL_USER = 'furqancruisebrains@gmail.com'
+    const EMAIL_PASS = 'zfoxmbicwqsrjpug'
+    const RECEIVER_EMAIL = 'furqan.ali@callgauge.ai'
+
     const transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 587,
         secure: false,
         auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
+            user: EMAIL_USER,
+            pass: EMAIL_PASS,
         },
     })
 
     try {
         await transporter.sendMail({
-            from: `"CruiseBrains Website" <${process.env.EMAIL_USER}>`,
-            to: process.env.RECEIVER_EMAIL,
+            from: `"CruiseBrains Website" <${EMAIL_USER}>`,
+            to: RECEIVER_EMAIL,
             subject: 'CruiseBrains Website Contact',
             html: `
         <h2>CruiseBrains Website Contact</h2>
