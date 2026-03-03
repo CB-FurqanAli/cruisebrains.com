@@ -150,6 +150,22 @@ export default function Home({ services }) {
       <Head>
         <title>Cruise Brains - Software development company</title>
         <meta name="description" />
+        {/* Google tag (gtag.js) */}
+        <script
+            async
+            src="https://www.googletagmanager.com/gtag/js?id=G-N9FZ1ENY5S"
+        />
+
+        <script
+            dangerouslySetInnerHTML={{
+              __html: `
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-N9FZ1ENY5S');
+      `,
+            }}
+        />
       </Head>
       <Container className="mt-14">
         <div className="max-w-2xl">
