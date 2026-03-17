@@ -23,27 +23,96 @@ function MailIcon(props) {
       </svg>
   )
 }
+import { useState } from "react"
+import ReCAPTCHA from "react-google-recaptcha"
 
 export default function ApplyForm() {
+  const [captchaToken, setCaptchaToken] = useState("")
+  const [captchaError, setCaptchaError] = useState("")
+  const [formError, setFormError] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [fileName, setFileName] = useState("")
+
+  const handleCaptchaChange = (token) => {
+    setCaptchaToken(token || "")
+    setCaptchaError("")
+  }
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0]
+    setFileName(file ? file.name : "")
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    setFormError("")
+    setCaptchaError("")
+
+    const form = e.currentTarget
+    const formData = new FormData(form)
+
+    const name = formData.get("name")?.toString().trim()
+    const email = formData.get("email")?.toString().trim()
+    const summary = formData.get("summary")?.toString().trim()
+    const resume = formData.get("resume")
+
+    if (!name || !email || !summary || !resume || !(resume instanceof File) || resume.size === 0) {
+      setFormError("All fields are required.")
+      return
+    }
+
+    if (!captchaToken) {
+      setCaptchaError("Please verify that you are not a robot.")
+      return
+    }
+
+    formData.append("captcha", captchaToken)
+
+    try {
+      setLoading(true)
+
+      const response = await fetch("/api/apply", {
+        method: "POST",
+        body: formData,
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        if (data.field === "captcha") {
+          setCaptchaError(data.message || "Captcha verification failed.")
+        } else {
+          setFormError(data.message || "Something went wrong.")
+        }
+        setLoading(false)
+        return
+      }
+
+      window.location.href = "/thank-you"
+    } catch (error) {
+      setFormError("Something went wrong. Please try again.")
+      setLoading(false)
+    }
+  }
+
   return (
       <div className="order-last grid grid-flow-col lg:grid-flow-row lg:pl-20">
-
         <form
-            method="POST"
-            action="/api/apply"
+            onSubmit={handleSubmit}
             encType="multipart/form-data"
             className="mt-10 rounded-2xl border border-zinc-100 p-6 dark:border-zinc-700/40"
         >
           <h2 className="flex text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-            <MailIcon className="h-6 w-6 flex-none"/>
+            <MailIcon className="h-6 w-6 flex-none" />
             <span className="ml-2">Apply Now</span>
           </h2>
-          <p className=" pt-2 text-xs text-zinc-900 dark:text-zinc-100">
+
+          <p className="pt-2 text-xs text-zinc-900 dark:text-zinc-100">
             Fill up required information asking in the form.
           </p>
 
           <div className="my-5 grid gap-6">
-            {/* Name */}
             <div>
               <input
                   type="text"
@@ -55,7 +124,6 @@ export default function ApplyForm() {
               />
             </div>
 
-            {/* Email */}
             <div>
               <input
                   type="email"
@@ -66,46 +134,66 @@ export default function ApplyForm() {
               />
             </div>
 
-            {/* Summary */}
             <div>
             <textarea
                 name="summary"
                 placeholder="Summary"
                 required
                 rows={4}
-                className="w-full rounded-md border border-zinc-900/10 bg-white px-3 py-3 shadow-md shadow-zinc-800/5 placeholder:text-zinc-400 focus:border-teal-500 focus:outline-none focus:ring-4 focus:ring-teal-500/10 dark:border-zinc-700 dark:bg-zinc-700/[0.15] dark:text-zinc-200 dark:placeholder:text-zinc-500 dark:focus:border-teal-400 dark:focus:ring-teal-400/10 sm:text-sm resize-none"
+                className="w-full resize-none rounded-md border border-zinc-900/10 bg-white px-3 py-3 shadow-md shadow-zinc-800/5 placeholder:text-zinc-400 focus:border-teal-500 focus:outline-none focus:ring-4 focus:ring-teal-500/10 dark:border-zinc-700 dark:bg-zinc-700/[0.15] dark:text-zinc-200 dark:placeholder:text-zinc-500 dark:focus:border-teal-400 dark:focus:ring-teal-400/10 sm:text-sm"
             />
             </div>
 
-            {/* Resume */}
             <div>
               <label
                   htmlFor="resume"
-                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-white dark:bg-zinc-700/20 hover:border-teal-500 focus:outline-none focus:ring-4 focus:ring-teal-500/10"
+                  className="flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed bg-white hover:border-teal-500 focus:outline-none focus:ring-4 focus:ring-teal-500/10 dark:bg-zinc-700/20"
               >
-                <span className="text-teal-500">Click to upload your resume</span>
+              <span className="text-teal-500">
+                {fileName ? fileName : "Click to upload your resume"}
+              </span>
                 <input
                     type="file"
                     id="resume"
                     name="resume"
                     accept=".pdf,.doc,.docx"
                     required
+                    onChange={handleFileChange}
                     className="hidden"
                 />
               </label>
             </div>
+
+            {process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ? (
+                <div>
+                  <ReCAPTCHA
+                      sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+                      onChange={handleCaptchaChange}
+                  />
+                  {captchaError && (
+                      <p className="mt-2 text-sm text-red-600">{captchaError}</p>
+                  )}
+                </div>
+            ) : (
+                <p className="text-sm text-red-600">
+                  reCAPTCHA site key is missing.
+                </p>
+            )}
+
+            {formError && (
+                <p className="text-sm text-red-600">{formError}</p>
+            )}
           </div>
 
           <div className="mt-4">
-            <Button type="submit" className="w-24">
-              Submit
+            <Button type="submit" className="w-24" disabled={loading}>
+              {loading ? "Sending..." : "Submit"}
             </Button>
           </div>
         </form>
       </div>
   )
 }
-
 
 // import React from 'react'
 // import {Button} from '@/components/Button'
