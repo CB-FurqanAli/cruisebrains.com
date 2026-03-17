@@ -23,7 +23,7 @@
     "focus-visible": "^5.2.0",
     "formidable": "^3.5.4",
     "next": "13.0.2",
-    "nodemailer": "^7.0.12",
+    "nodemailer": "^7.0.13",
     "postcss-focus-visible": "^6.0.4",
     "react": "18.2.0",
     "react-dom": "18.2.0",

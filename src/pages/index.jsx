@@ -68,31 +68,95 @@ function SocialLink({ icon: Icon, ...props }) {
   )
 }
 
-import ReCAPTCHA from "react-google-recaptcha"
 import { useState } from "react"
+import ReCAPTCHA from "react-google-recaptcha"
 
 function Contactus() {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+  })
+  const [captchaToken, setCaptchaToken] = useState("")
+  const [captchaError, setCaptchaError] = useState("")
+  const [formError, setFormError] = useState("")
+  const [loading, setLoading] = useState(false)
 
-  const [captcha, setCaptcha] = useState(null)
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  const handleCaptchaChange = (token) => {
+    setCaptchaToken(token || "")
+    setCaptchaError("")
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    setFormError("")
+    setCaptchaError("")
+
+    if (!formData.name.trim() || !formData.email.trim()) {
+      setFormError("Please fill in all required fields.")
+      return
+    }
+
+    if (!captchaToken) {
+      setCaptchaError("Please verify that you are not a robot.")
+      return
+    }
+
+    try {
+      setLoading(true)
+
+      const response = await fetch("/api/contact-home", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          captcha: captchaToken,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        if (data.field === "captcha") {
+          setCaptchaError(data.message || "Captcha verification failed.")
+        } else {
+          setFormError(data.message || "Something went wrong.")
+        }
+        setLoading(false)
+        return
+      }
+
+      window.location.href = "/thank-you"
+    } catch (error) {
+      setFormError("Something went wrong. Please try again.")
+      setLoading(false)
+    }
+  }
 
   return (
       <form
-          method="POST"
-          action="/api/contact-home"
+          onSubmit={handleSubmit}
           className="rounded-2xl border border-zinc-100 p-6 dark:border-zinc-700/40"
       >
         <h3 className="flex text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-          <MailIcon className="h-6 w-6 flex-none"/>
+          <MailIcon className="h-6 w-6 flex-none" />
           <span className="ml-3">Contact us</span>
         </h3>
 
         <div className="my-5 grid gap-6 md:grid-cols-1">
-
-          <input type="hidden" name="captcha" value={captcha || ""} />
-
-          {/* Name */}
           <div className="flex flex-col">
-            <label className="mb-2 block text-sm font-medium">
+            <label className="mb-2 block text-sm font-medium text-zinc-900 dark:text-zinc-100">
               Name:
             </label>
             <input
@@ -100,13 +164,14 @@ function Contactus() {
                 name="name"
                 placeholder="Full Name"
                 required
-                className="input-style"
+                value={formData.name}
+                onChange={handleChange}
+                className="min-w-0 flex-auto appearance-none rounded-md border border-zinc-900/10 bg-white px-3 py-[calc(theme(spacing.2)-1px)] shadow-md shadow-zinc-800/5 placeholder:text-zinc-400 focus:border-teal-500 focus:outline-none focus:ring-4 focus:ring-teal-500/10 dark:border-zinc-700 dark:bg-zinc-700/[0.15] dark:text-zinc-200 dark:placeholder:text-zinc-500 dark:focus:border-teal-400 dark:focus:ring-teal-400/10 sm:text-sm"
             />
           </div>
 
-          {/* Email */}
           <div className="flex flex-col">
-            <label className="mb-2 block text-sm font-medium">
+            <label className="mb-2 block text-sm font-medium text-zinc-900 dark:text-zinc-100">
               Email:
             </label>
             <input
@@ -114,27 +179,42 @@ function Contactus() {
                 name="email"
                 placeholder="Email address"
                 required
-                className="input-style"
+                value={formData.email}
+                onChange={handleChange}
+                className="min-w-0 flex-auto appearance-none rounded-md border border-zinc-900/10 bg-white px-3 py-[calc(theme(spacing.2)-1px)] shadow-md shadow-zinc-800/5 placeholder:text-zinc-400 focus:border-teal-500 focus:outline-none focus:ring-4 focus:ring-teal-500/10 dark:border-zinc-700 dark:bg-zinc-700/[0.15] dark:text-zinc-200 dark:placeholder:text-zinc-500 dark:focus:border-teal-400 dark:focus:ring-teal-400/10 sm:text-sm"
             />
           </div>
 
-          {/* CAPTCHA */}
-          <ReCAPTCHA
-              sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
-              onChange={(token) => setCaptcha(token)}
-          />
+          {process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ? (
+              <div>
+                <ReCAPTCHA
+                    sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+                    onChange={handleCaptchaChange}
+                />
+                {captchaError && (
+                    <p className="mt-2 text-sm text-red-600">{captchaError}</p>
+                )}
+              </div>
+          ) : (
+              <p className="text-sm text-red-600">
+                reCAPTCHA site key is missing.
+              </p>
+          )}
 
+          {formError && (
+              <p className="text-sm text-red-600">{formError}</p>
+          )}
         </div>
 
-        <div className="ml-auto flex w-24 justify-end">
-          <Button type="submit" className="w-20">
-            Send
+        <div className="ml-auto flex w-28 justify-end">
+          <Button type="submit" className="w-28" disabled={loading}>
+            {loading ? "Sending..." : "Send"}
           </Button>
         </div>
-
       </form>
   )
 }
+
 
 
 function Photos() {
