@@ -1,11 +1,34 @@
 import nodemailer from 'nodemailer'
 
 export default async function handler(req, res) {
+
     if (req.method !== 'POST') {
         return res.status(405).end()
     }
 
-    const { name, email } = req.body
+    const { name, email, captcha } = req.body
+
+    if (!captcha) {
+        return res.status(400).send('Captcha required')
+    }
+
+    // Verify captcha with Google
+    const verify = await fetch(
+        `https://www.google.com/recaptcha/api/siteverify`,
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${captcha}`
+        }
+    )
+
+    const data = await verify.json()
+
+    if (!data.success) {
+        return res.status(400).send('Captcha verification failed')
+    }
 
     if (!name || !email) {
         return res.status(400).send('Missing fields')
@@ -22,6 +45,7 @@ export default async function handler(req, res) {
     })
 
     try {
+
         await transporter.sendMail({
             from: `"CruiseBrains Website" <${process.env.EMAIL_USER}>`,
             to: process.env.RECEIVER_EMAIL,
@@ -34,8 +58,11 @@ export default async function handler(req, res) {
         })
 
         return res.redirect(303, '/thank-you')
+
     } catch (error) {
+
         console.error(error)
         return res.status(500).send('Email sending failed')
+
     }
 }

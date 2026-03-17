@@ -68,7 +68,13 @@ function SocialLink({ icon: Icon, ...props }) {
   )
 }
 
+import ReCAPTCHA from "react-google-recaptcha"
+import { useState } from "react"
+
 function Contactus() {
+
+  const [captcha, setCaptcha] = useState(null)
+
   return (
       <form
           method="POST"
@@ -81,8 +87,12 @@ function Contactus() {
         </h3>
 
         <div className="my-5 grid gap-6 md:grid-cols-1">
+
+          <input type="hidden" name="captcha" value={captcha || ""} />
+
+          {/* Name */}
           <div className="flex flex-col">
-            <label className="mb-2 block text-sm font-medium text-zinc-900 dark:text-zinc-100">
+            <label className="mb-2 block text-sm font-medium">
               Name:
             </label>
             <input
@@ -90,12 +100,13 @@ function Contactus() {
                 name="name"
                 placeholder="Full Name"
                 required
-                className="min-w-0 flex-auto appearance-none rounded-md border border-zinc-900/10 bg-white px-3 py-[calc(theme(spacing.2)-1px)] shadow-md shadow-zinc-800/5 placeholder:text-zinc-400 focus:border-teal-500 focus:outline-none focus:ring-4 focus:ring-teal-500/10 dark:border-zinc-700 dark:bg-zinc-700/[0.15] dark:text-zinc-200 dark:placeholder:text-zinc-500 dark:focus:border-teal-400 dark:focus:ring-teal-400/10 sm:text-sm"
+                className="input-style"
             />
-
           </div>
+
+          {/* Email */}
           <div className="flex flex-col">
-            <label className="mb-2 block text-sm font-medium text-zinc-900 dark:text-zinc-100">
+            <label className="mb-2 block text-sm font-medium">
               Email:
             </label>
             <input
@@ -103,19 +114,28 @@ function Contactus() {
                 name="email"
                 placeholder="Email address"
                 required
-                className="min-w-0 flex-auto appearance-none rounded-md border border-zinc-900/10 bg-white px-3 py-[calc(theme(spacing.2)-1px)] shadow-md shadow-zinc-800/5 placeholder:text-zinc-400 focus:border-teal-500 focus:outline-none focus:ring-4 focus:ring-teal-500/10 dark:border-zinc-700 dark:bg-zinc-700/[0.15] dark:text-zinc-200 dark:placeholder:text-zinc-500 dark:focus:border-teal-400 dark:focus:ring-teal-400/10 sm:text-sm"
+                className="input-style"
             />
-
           </div>
+
+          {/* CAPTCHA */}
+          <ReCAPTCHA
+              sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+              onChange={(token) => setCaptcha(token)}
+          />
+
         </div>
+
         <div className="ml-auto flex w-24 justify-end">
-          <Button type="submit" className={`w-20`}>
+          <Button type="submit" className="w-20">
             Send
           </Button>
         </div>
+
       </form>
   )
 }
+
 
 function Photos() {
   let rotations = ['rotate-2', '-rotate-2', 'rotate-2', 'rotate-2', '-rotate-2']
